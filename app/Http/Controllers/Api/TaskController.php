@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreTaskRequest;
 use App\Http\Resources\TaskResource;
 use App\Models\Task;
 use App\Traits\HttpRes;
@@ -31,46 +32,45 @@ class TaskController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request)
+    public function store(StoreTaskRequest $request)
     {
-        //
+        $storeArr = [
+            'title' =>  $request->title,//'required|string|min:2',
+            'start_day' => $request->start_day,
+            'end_day' => $request->end_day,
+            'status' => $request->status,
+        ];
+        if ($request->has('description')) {
+            $storeArr['description'] = $request->description;
+        }
+        if ($request->has('user_id')) {
+            $storeArr['user_id'] = $request->user_id;
+        } else {
+            $storeArr['user_id'] = auth()->user()->id;
+        }
+
+        $data = Task::create($storeArr);
+        $task = TaskResource::collection(Task::where('id', $data->id)->get());
+
+        return $this->success('201', 'Task Added Successfully', $task[0]);
     }
 
     /**
      * Display the specified resource.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function show($id)
     {
-        //
-    }
+        $task = TaskResource::collection(Task::where('id', $id)->get());
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
+        return $this->success('200', '', $task[0]);
     }
 
     /**
@@ -78,22 +78,68 @@ class TaskController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(StoreTaskRequest $request, $id)
     {
-        //
+        $task = Task::find($id);
+
+        if (!$task) {
+            return $this->error('404', 'Task Not Found');
+        }
+
+        if (auth()->user()->is_admin || $task->user_id === auth()->user()->id) {
+            $storeArr = $this->fillTask($request);
+            Task::where('id', $id)->update($storeArr);
+            $task = TaskResource::collection(Task::where('id', $id)->get());
+
+            return $this->success('201', 'Task Update Successfully', $task[0]);
+        }
+
+        return $this->error('403', 'This Action Is Unauthorized');
+
     }
 
     /**
      * Remove the specified resource from storage.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {
-        //
+        $task = Task::find($id);
+
+        if (!$task) {
+            return $this->error('404', 'Task not found');
+        }
+
+        if (auth()->user()->is_admin || $task->user_id === auth()->user()->id) {
+            $task->destroy($id);
+            return $this->success('200', 'Task Deleted Successfully', []);
+        }
+
+        return $this->error('403', 'This Action Is Unauthorized');
+    }
+
+    private function fillTask(StoreTaskRequest $request)
+    {
+        $data = [
+            'title' =>  $request->title,
+            'start_day' => $request->start_day,
+            'end_day' => $request->end_day,
+            'status' => $request->status,
+        ];
+        if ($request->has('description')) {
+            $data['description'] = $request->description;
+        }
+        if ($request->has('user_id')) {
+            $data['user_id'] = $request->user_id;
+        } else {
+            $data['user_id'] = auth()->user()->id;
+        }
+
+        return $data;
     }
 
 }
