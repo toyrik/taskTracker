@@ -80,9 +80,15 @@ const group = ref(null)
 const navItems = ref([
     {
         id: 1,
-        title: 'Menu 1',
-        value: 'menu_1',
+        title: 'Dashboard',
+        value: 'dashboard',
         path: '/dashboard'
+    },
+    {
+        id: 1,
+        title: 'Task List',
+        value: 'task_list',
+        path: '/task-list'
     },
 ])
 

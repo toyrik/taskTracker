@@ -27,7 +27,7 @@ class TaskController extends Controller
             })
                 ->when($request->status, function ($query) use ($request) {
                 return $query->FilterByStatus($request->status);
-            })->get()
+            })->paginate(10)
         );
     }
 

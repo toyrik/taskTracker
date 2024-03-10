@@ -24,4 +24,8 @@ import router from './routes'
 // Vuex
 import store from './store';
 
-createApp(App).use(vuetify).use(router).use(store).mount("#app")
+// vue3-easy-data-table
+import Vue3EasyDataTable from 'vue3-easy-data-table';
+import 'vue3-easy-data-table/dist/style.css';
+
+createApp(App).use(vuetify).use(router).use(store).component('EasyDataTable', Vue3EasyDataTable).mount("#app")
